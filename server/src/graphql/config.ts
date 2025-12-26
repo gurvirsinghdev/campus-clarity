@@ -1,0 +1,1 @@
+export const graphqlEndpoint = "https://www.ratemyprofessors.com/graphql";
