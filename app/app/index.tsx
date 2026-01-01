@@ -1,77 +1,138 @@
-import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
-import { Text } from '@/components/ui/text';
-import { Link, Stack } from 'expo-router';
-import { MoonStarIcon, StarIcon, SunIcon } from 'lucide-react-native';
-import { useColorScheme } from 'nativewind';
+import { Stack } from 'expo-router';
 import * as React from 'react';
-import { Image, type ImageStyle, View } from 'react-native';
+import { Poppins_400Regular, useFonts } from '@expo-google-fonts/poppins';
+import {
+  View,
+  Text as NativeText,
+  TextInput,
+  TouchableOpacity,
+  ViewBase,
+  KeyboardAvoidingView,
+  ScrollView,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StatusBar } from 'expo-status-bar';
+import { Text } from '@/components/ui/text';
+import { Badge } from '@/components/ui/badge';
+import { Loader2Icon } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
 
-const LOGO = {
-  light: require('@/assets/images/react-native-reusables-light.png'),
-  dark: require('@/assets/images/react-native-reusables-dark.png'),
-};
-
-const SCREEN_OPTIONS = {
-  title: 'React Native Reusables',
-  headerTransparent: true,
-  headerRight: () => <ThemeToggle />,
-};
-
-const IMAGE_STYLE: ImageStyle = {
-  height: 76,
-  width: 76,
-};
-
-export default function Screen() {
-  const { colorScheme } = useColorScheme();
-
-  return (
-    <>
-      <Stack.Screen options={SCREEN_OPTIONS} />
-      <View className="flex-1 items-center justify-center gap-8 p-4">
-        <Image source={LOGO[colorScheme ?? 'light']} style={IMAGE_STYLE} resizeMode="contain" />
-        <View className="gap-2 p-4">
-          <Text className="ios:text-foreground font-mono text-sm text-muted-foreground">
-            1. Edit <Text variant="code">app/index.tsx</Text> to get started.
-          </Text>
-          <Text className="ios:text-foreground font-mono text-sm text-muted-foreground">
-            2. Save to see your changes instantly.
-          </Text>
-        </View>
-        <View className="flex-row gap-2">
-          <Link href="https://reactnativereusables.com" asChild>
-            <Button>
-              <Text>Browse the Docs</Text>
-            </Button>
-          </Link>
-          <Link href="https://github.com/founded-labs/react-native-reusables" asChild>
-            <Button variant="ghost">
-              <Text>Star the Repo</Text>
-              <Icon as={StarIcon} />
-            </Button>
-          </Link>
-        </View>
-      </View>
-    </>
-  );
+interface SchoolSearchValidAPIResponse {
+  schools: {
+    canonicalName: string;
+    canonicalCountry: string;
+    branches: {
+      id: string;
+      cursor: string;
+      name: string;
+      city: string;
+      state: string;
+    }[];
+  }[];
 }
 
-const THEME_ICONS = {
-  light: SunIcon,
-  dark: MoonStarIcon,
-};
+const apiBaseUrl = 'https://thetic-nonfashionably-sandy.ngrok-free.dev/api';
 
-function ThemeToggle() {
-  const { colorScheme, toggleColorScheme } = useColorScheme();
+export default function MainScreen() {
+  const [fontLoaded] = useFonts({
+    Poppins: Poppins_400Regular,
+  });
 
+  const colorScheme = useColorScheme();
+  colorScheme.setColorScheme('light');
+
+  const [loading, setLoading] = React.useState(false);
+  const [controller, setController] = React.useState<AbortController | null>(null);
+  const [searchQuery, setSearchQuery] = React.useState<string | null>(null);
+  const [schoolsData, setSchoolsData] = React.useState<SchoolSearchValidAPIResponse | null>(null);
+
+  const fetchSchools = async function (signal: AbortSignal) {
+    setLoading(true);
+    const schoolsSearchEndpoint =
+      apiBaseUrl + '/schools/search?q=' + (searchQuery || 'University of');
+    try {
+      const response = await fetch(schoolsSearchEndpoint, { signal });
+      const json = await response.json();
+      if (json && Array.isArray(json?.schools)) setSchoolsData(json);
+    } catch {
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(
+    function () {
+      if (controller) controller.abort();
+      const newController = new AbortController();
+      setController(newController);
+      fetchSchools(newController.signal);
+    },
+    [searchQuery]
+  );
+
+  if (!fontLoaded) return null;
   return (
-    <Button
-      onPressIn={toggleColorScheme}
-      size="icon"
-      variant="ghost"
-      className="ios:size-9 rounded-full web:mx-4">
-      <Icon as={THEME_ICONS[colorScheme ?? 'light']} className="size-5" />
-    </Button>
+    <>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: 'CampusClarity',
+          headerTitleStyle: {
+            fontFamily: 'Poppins',
+          },
+        }}
+      />
+
+      <View className="-mt-4 h-screen w-screen bg-neutral-100 p-4 pt-0">
+        <StatusBar style="dark" />
+        <SafeAreaView className="flex flex-col gap-8">
+          <View className="flex flex-col gap-2">
+            <View>
+              <TouchableOpacity>
+                <TextInput
+                  className="border border-border bg-white p-4"
+                  style={{ fontFamily: 'Poppins' }}
+                  placeholder="Search School"
+                  value={searchQuery || ''}
+                  onChangeText={setSearchQuery}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {/* Generic Listing for Schools */}
+            <View>
+              <Text style={{ fontFamily: 'Poppins' }} className="text-sm">
+                Unable to find your school? Use the search bar above.
+              </Text>
+            </View>
+          </View>
+
+          <ScrollView>
+            <View className="flex flex-col gap-2 pb-48">
+              {schoolsData && schoolsData.schools.length == 0 && (
+                <Text style={{ fontFamily: 'Poppins' }}>No schools found!</Text>
+              )}
+              {schoolsData &&
+                schoolsData.schools.map((school, idx) => (
+                  <View key={idx} className="border border-border bg-white p-4">
+                    <Text style={{ fontFamily: 'Poppins' }}>{school.canonicalName}</Text>
+                    <View className="flex flex-row items-center justify-between">
+                      <View>
+                        <Badge>
+                          <Text className="text-xs">{school.canonicalCountry}</Text>
+                        </Badge>
+                      </View>
+
+                      <View>
+                        <Text>{school.branches.map((branch) => branch.state).join(', ')}</Text>
+                      </View>
+                    </View>
+                  </View>
+                ))}
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </>
   );
 }
