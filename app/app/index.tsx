@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import * as React from 'react';
 import { Poppins_400Regular, useFonts } from '@expo-google-fonts/poppins';
-import { View, TextInput, ScrollView, Platform, Image, ImageBackground } from 'react-native';
+import { View, TextInput, ScrollView, Platform, Image, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Text } from '@/components/ui/text';
@@ -10,6 +10,7 @@ import { ChevronRight, SearchIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { cn } from '@/lib/utils';
 import { THEME } from '@/lib/theme';
+import { useRouter } from 'expo-router';
 
 interface SchoolSearchValidAPIResponse {
   schools: {
@@ -35,6 +36,8 @@ export default function MainScreen() {
 
   const colorScheme = useColorScheme();
   colorScheme.setColorScheme('light');
+
+  const router = useRouter();
 
   const [loading, setLoading] = React.useState(false);
   const [controller, setController] = React.useState<AbortController | null>(null);
@@ -70,7 +73,6 @@ export default function MainScreen() {
     <>
       <Stack.Screen
         options={{
-          headerShown: true,
           title: 'CampusClarity',
           headerTitleStyle: {
             fontFamily: 'Poppins',
@@ -131,18 +133,11 @@ export default function MainScreen() {
                     className={cn(school.branches.length > 1 ? 'pb-4' : 'pb-2')}>
                     {/* Canonical Listing. */}
                     <View>
-                      {/* {school.branches.length > 1 && (
-                        <View className="p-2 pt-0">
-                          <Text className="text-lg" style={{ fontFamily: 'Poppins' }}>
-                            {school.canonicalName}
-                          </Text>
-                        </View>
-                      )} */}
-
                       {/* Branch Listing */}
                       <View className="flex-col gap-2">
                         {school.branches.map((branch, branchIdx) => (
-                          <View
+                          <TouchableOpacity
+                            onPress={() => router.navigate(`/${branch.id}`)}
                             key={branchIdx}
                             className="flex-col gap-2 rounded-md border border-border bg-white p-4">
                             {/* Name & Country */}
@@ -172,7 +167,7 @@ export default function MainScreen() {
                               </Badge>
                               <ChevronRight className="size-4" color={THEME.light.border} />
                             </View>
-                          </View>
+                          </TouchableOpacity>
                         ))}
                       </View>
                     </View>
