@@ -40,7 +40,12 @@ cssInterop(IconImpl, {
  * @param {number} size - Icon size (defaults to 14).
  * @param {...LucideProps} ...props - Additional Lucide icon props passed to the "as" icon.
  */
-function Icon({ as: IconComponent, className, size = 14, ...props }: IconProps) {
+function Icon({
+  as: IconComponent,
+  className,
+  size = 14,
+  ...props
+}: IconProps) {
   return (
     <IconImpl
       as={IconComponent}

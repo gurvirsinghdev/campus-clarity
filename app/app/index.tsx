@@ -1,7 +1,14 @@
 import { Stack } from 'expo-router';
 import * as React from 'react';
 import { Poppins_400Regular, useFonts } from '@expo-google-fonts/poppins';
-import { View, TextInput, ScrollView, Platform, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  TextInput,
+  ScrollView,
+  Platform,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Text } from '@/components/ui/text';
@@ -11,23 +18,8 @@ import { useColorScheme } from 'nativewind';
 import { cn } from '@/lib/utils';
 import { THEME } from '@/lib/theme';
 import { useRouter } from 'expo-router';
-
-interface SchoolSearchValidAPIResponse {
-  schools: {
-    canonicalName: string;
-    canonicalCountry: string;
-    branches: {
-      id: string;
-      cursor: string;
-      name: string;
-      city: string;
-      state: string;
-    }[];
-  }[];
-}
-
-const apiBaseUrl = 'https://thetic-nonfashionably-sandy.ngrok-free.dev/api';
-// const apiBaseUrl = 'http://localhost:8000/api';
+import { SchoolSearchValidAPIResponse } from '@/lib/interface';
+import { apiBaseUrl } from '@/lib/api';
 
 export default function MainScreen() {
   const [fontLoaded] = useFonts({
@@ -40,9 +32,12 @@ export default function MainScreen() {
   const router = useRouter();
 
   const [loading, setLoading] = React.useState(false);
-  const [controller, setController] = React.useState<AbortController | null>(null);
+  const [controller, setController] = React.useState<AbortController | null>(
+    null
+  );
   const [searchQuery, setSearchQuery] = React.useState<string | null>(null);
-  const [schoolsData, setSchoolsData] = React.useState<SchoolSearchValidAPIResponse | null>(null);
+  const [schoolsData, setSchoolsData] =
+    React.useState<SchoolSearchValidAPIResponse | null>(null);
 
   const fetchSchools = async function (signal: AbortSignal) {
     setLoading(true);
@@ -115,7 +110,8 @@ export default function MainScreen() {
             {!searchQuery && (
               <View>
                 <Text style={{ fontFamily: 'Poppins' }} className="text-sm">
-                  Unable to find your university in the default list? Use the search bar above.
+                  Unable to find your university in the default list? Use the
+                  search bar above.
                 </Text>
               </View>
             )}
@@ -130,14 +126,20 @@ export default function MainScreen() {
                 schoolsData.schools.map((school, schoolIdx) => (
                   <View
                     key={schoolIdx}
-                    className={cn(school.branches.length > 1 ? 'pb-4' : 'pb-2')}>
+                    className={cn(
+                      school.branches.length > 1 ? 'pb-4' : 'pb-2'
+                    )}>
                     {/* Canonical Listing. */}
                     <View>
                       {/* Branch Listing */}
                       <View className="flex-col gap-2">
                         {school.branches.map((branch, branchIdx) => (
                           <TouchableOpacity
-                            onPress={() => router.navigate(`/${branch.id}`)}
+                            onPress={() =>
+                              router.navigate(
+                                `/${branch.id}?n=${encodeURI(branch.name)}`
+                              )
+                            }
                             key={branchIdx}
                             className="flex-col gap-2 rounded-md border border-border bg-white p-4">
                             {/* Name & Country */}
@@ -153,7 +155,10 @@ export default function MainScreen() {
                                     uri: `https://flagsapi.com/${school.canonicalCountry}/flat/64.png`,
                                   }}
                                   resizeMode={'cover'}
-                                  style={{ flex: 1, transform: [{ scale: 1.75 }] }}
+                                  style={{
+                                    flex: 1,
+                                    transform: [{ scale: 1.75 }],
+                                  }}
                                 />
                               </View>
                             </View>
@@ -165,7 +170,10 @@ export default function MainScreen() {
                                   {branch.city}, {branch.state}
                                 </Text>
                               </Badge>
-                              <ChevronRight className="size-4" color={THEME.light.border} />
+                              <ChevronRight
+                                className="size-4"
+                                color={THEME.light.border}
+                              />
                             </View>
                           </TouchableOpacity>
                         ))}
