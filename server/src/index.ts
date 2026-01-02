@@ -14,6 +14,10 @@ import {
   groupSchools,
 } from "./helpers/school";
 import { cors } from "hono/cors";
+import {
+  professorsListingQuery,
+  type ProfessorsListingQueryValidResponse,
+} from "./graphql/professorsListing";
 
 /**
  * Creating the Hono Application.
@@ -81,6 +85,48 @@ app.get("/schools/search", async (c) => {
    */
   return c.json({
     schools: [],
+    pageInfo: null,
+  });
+});
+
+/**
+ * Route to list all the professors in linked to a school.
+ */
+app.get("/schools/details", async (c) => {
+  const requestQuerySchema = z.object({
+    sid: z.string().min(1, "Invalid School ID"),
+  });
+
+  /**
+   * Parsing the query parameters from the request url.
+   */
+  const selfUrl = new URL(c.req.url.toString());
+  const queryParams = new URLSearchParams(selfUrl.search);
+  const requestQuery = requestQuerySchema.parse(
+    Object.fromEntries(queryParams.entries())
+  );
+
+  const response = (await request(graphqlEndpoint, professorsListingQuery, {
+    schoolId: requestQuery.sid,
+  })) as ProfessorsListingQueryValidResponse | undefined;
+
+  if (response) {
+    return c.json({
+      professors: response.newSearch.teachers.edges.map((teacher) => ({
+        id: teacher.node.id,
+        cursor: teacher.cursor,
+        firstName: teacher.node.firstName,
+        lastName: teacher.node.lastName,
+        department: teacher.node.department,
+        numRatings: teacher.node.numRatings,
+        avgRatingRounded: teacher.node.avgRatingRounded,
+      })),
+      pageInfo: response.newSearch.teachers.pageInfo,
+    });
+  }
+
+  return c.json({
+    professors: [],
     pageInfo: null,
   });
 });
